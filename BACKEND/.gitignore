@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Environment variables (contains secrets)
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code (optional - only if you don't want to share your workspace settings)
+.vscode/
+
+# Coverage reports (for future testing)
+coverage/
