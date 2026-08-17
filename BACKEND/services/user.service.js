@@ -14,6 +14,23 @@ async function createUser(name, email, passwordHash) {
     return result.rows[0];
 }
 
+
+
+async function findUserByEmail(email) {
+    const query = `
+        SELECT id, name, email, password_hash, role
+        FROM users
+        WHERE email = $1;
+    `;
+
+    const values = [email];
+
+    const result = await pool.query(query, values);
+
+    return result.rows[0];
+}
+
 module.exports = {
-    createUser
+    createUser,
+    findUserByEmail
 };

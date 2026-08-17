@@ -1,6 +1,8 @@
 const bcrypt = require("bcrypt");
 const userService = require("../services/user.service");
 
+const jwt = require("jsonwebtoken");
+
 async function registerUser(req, res) {
     try {
 
@@ -34,6 +36,66 @@ async function registerUser(req, res) {
     }
 }
 
+async function loginUser(req, res) {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({
+                message: "Email and password are required."
+            });
+        }
+
+        const user = await userService.findUserByEmail(email);
+
+        if (!user) {
+            return res.status(401).json({
+                message: "Invalid email or password."
+            });
+        }
+
+        const isPasswordValid = await bcrypt.compare(
+            password,
+            user.password_hash
+        );
+
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                message: "Invalid email or password."
+            });
+        }
+
+        const token = jwt.sign({
+            userId: user.id,
+            role: user.role
+        },
+        process.env.JWT_SECRET,
+        {
+            expiresIn: "1h"
+        }
+        );
+
+        return res.status(200).json({
+            message: "Login successful.",
+            token
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            message: err.message
+        });
+    }
+}
+
+function getProfile(req, res) {
+    return res.status(200).json({
+        message: "Authenticated successfully.",
+        user: req.user
+    });
+}
+
 module.exports = {
-    registerUser
+    registerUser,
+    loginUser,
+    getProfile
 };
