@@ -44,6 +44,34 @@ async function transferMoney(req, res) {
     }
 }
 
+async function getUserTransactions(req, res) {
+    try {
+        const user = req.user.userId;
+
+        const account =
+            await transactionService.getAccountByUserId(user);
+
+        if (!account) {
+            return res.status(404).json({
+                message: "No account found"
+            });
+        }
+
+        const transactions =
+            await transactionService.getUserTransactions(account.id);
+
+        return res.status(200).json({
+            transactions
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            message: err.message
+        });
+    }
+}
+
 module.exports = {
-    transferMoney
+    transferMoney,
+    getUserTransactions
 };

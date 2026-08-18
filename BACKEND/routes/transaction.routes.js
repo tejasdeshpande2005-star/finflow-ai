@@ -10,4 +10,10 @@ router.post(
     transactionController.transferMoney
 );
 
+router.get(
+    "/",
+    authenticateToken,
+    transactionController.getUserTransactions
+);
+
 module.exports = router;

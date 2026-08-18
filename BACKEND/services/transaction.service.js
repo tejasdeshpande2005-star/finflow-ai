@@ -45,6 +45,21 @@ async function transferMoney(senderAccountId, receiverAccountId, amount) {
     
 }
 
+async function getUserTransactions(accountId) {
+    const query = `
+        SELECT *
+        FROM transactions
+        WHERE sender_account_id = $1
+           OR receiver_account_id = $1
+        ORDER BY created_at DESC;
+    `;
+
+    const result = await pool.query(query, [accountId]);
+
+    return result.rows;
+}
+
 module.exports = {getAccountByUserId,
-    transferMoney
+    transferMoney,
+    getUserTransactions
 };
