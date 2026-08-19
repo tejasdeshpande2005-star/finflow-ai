@@ -6,10 +6,13 @@ const app = express();
 
 const transactionRoutes = require("./routes/transaction.routes");
 
+const accountRoutes = require("./routes/account.routes");
+
 app.use(express.json());
 
 app.use("/api/users", userRoutes);
 app.use("/api/transactions", transactionRoutes);
+app.use("/api/accounts", accountRoutes);
 
 const PORT = 3000;
 

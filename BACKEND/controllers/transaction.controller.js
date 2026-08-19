@@ -4,18 +4,28 @@ async function transferMoney(req, res) {
     try {
         const { receiverAccountId, amount } = req.body;
 
-        if (!receiverAccountId) {
+        // Validate receiver account ID
+        if (!Number.isInteger(receiverAccountId)) {
             return res.status(400).json({
-                message: "Receiver account is required."
+                message: "Receiver account ID must be an integer."
             });
         }
 
+        // Validate amount type
+        if (typeof amount !== "number" || !Number.isFinite(amount)) {
+            return res.status(400).json({
+                message: "Amount must be a valid number."
+            });
+        }
+
+        // Validate amount value
         if (amount <= 0) {
             return res.status(400).json({
                 message: "Amount must be greater than zero."
             });
         }
 
+        // Get sender account from authenticated user's JWT
         const senderAccount =
             await transactionService.getAccountByUserId(
                 req.user.userId
@@ -27,6 +37,7 @@ async function transferMoney(req, res) {
             });
         }
 
+        // Perform transfer
         await transactionService.transferMoney(
             senderAccount.id,
             receiverAccountId,
@@ -38,25 +49,57 @@ async function transferMoney(req, res) {
         });
 
     } catch (err) {
+
+        // Insufficient balance
+        if (err.message === "Insufficient Balance") {
+            return res.status(422).json({
+                message: err.message
+            });
+        }
+
+        // Account not found
+        if (
+            err.message === "Sender account not found" ||
+            err.message === "Receiver account not found"
+        ) {
+            return res.status(404).json({
+                message: err.message
+            });
+        }
+
+        // Invalid transfer
+        if (
+            err.message === "Cannot transfer to the same account"
+        ) {
+            return res.status(400).json({
+                message: err.message
+            });
+        }
+
+        // Unexpected error
         return res.status(500).json({
-            message: err.message
+            message: "Internal server error"
         });
     }
 }
 
+
 async function getUserTransactions(req, res) {
     try {
-        const user = req.user.userId;
+        // Get user ID from JWT
+        const userId = req.user.userId;
 
+        // Find user's account
         const account =
-            await transactionService.getAccountByUserId(user);
+            await transactionService.getAccountByUserId(userId);
 
         if (!account) {
             return res.status(404).json({
-                message: "No account found"
+                message: "No account found."
             });
         }
 
+        // Get user's transactions
         const transactions =
             await transactionService.getUserTransactions(account.id);
 
@@ -65,11 +108,13 @@ async function getUserTransactions(req, res) {
         });
 
     } catch (err) {
+
         return res.status(500).json({
-            message: err.message
+            message: "Internal server error"
         });
     }
 }
+
 
 module.exports = {
     transferMoney,

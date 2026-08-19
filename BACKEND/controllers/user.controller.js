@@ -14,6 +14,24 @@ async function registerUser(req, res) {
             });
         }
 
+        if (password.length < 8) {
+            return res.status(400).json({
+                message: "Password must be at least 8 characters long."
+            });
+        }
+
+        if (!/[A-Za-z]/.test(password)) {
+            return res.status(400).json({
+                message: "Password must contain at least one letter."
+            });
+        }
+
+        if (!/[0-9]/.test(password)) {
+            return res.status(400).json({
+                message: "Password must contain at least one number."
+            });
+        }
+
         const passwordHash = await bcrypt.hash(password, 10);
 
         const user = await userService.createUser(
@@ -21,19 +39,27 @@ async function registerUser(req, res) {
             email,
             passwordHash
         );
-
         return res.status(201).json({
             message: "User registered successfully.",
-            user
+            user:{
+                id: user.id,
+                name: user.name,
+                email: user.email
+            }
         });
 
     } catch (err) {
 
-        return res.status(500).json({
-            message: err.message
+    if (err.code === "23505") {
+        return res.status(409).json({
+            message: "Email already registered."
         });
-
     }
+
+    return res.status(500).json({
+        message: "Internal server error"
+    });
+    } 
 }
 
 async function loginUser(req, res) {
