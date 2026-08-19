@@ -7,7 +7,9 @@ const app = express();
 const transactionRoutes = require("./routes/transaction.routes");
 
 const accountRoutes = require("./routes/account.routes");
+const helmet = require("helmet");
 
+app.use(helmet());
 app.use(express.json());
 
 app.use("/api/users", userRoutes);

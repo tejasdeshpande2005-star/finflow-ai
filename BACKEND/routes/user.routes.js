@@ -4,9 +4,10 @@ const router = express.Router();
 const userController = require("../controllers/user.controller");
 const authenticateToken = require("../middleware/auth.middleware");
 const authorizeRole = require("../middleware/role.middleware");
+const authLimiter = require("../middleware/rateLimit.middleware");
 
-router.post("/register", userController.registerUser);
-router.post("/login", userController.loginUser);
+router.post("/register",authLimiter, userController.registerUser);
+router.post("/login",authLimiter, userController.loginUser);
 router.get(
     "/profile",
     authenticateToken,
