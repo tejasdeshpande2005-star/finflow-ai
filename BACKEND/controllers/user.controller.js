@@ -1,36 +1,11 @@
 const bcrypt = require("bcrypt");
 const userService = require("../services/user.service");
-
 const jwt = require("jsonwebtoken");
 
-async function registerUser(req, res) {
+
+async function registerUser(req, res, next) {
     try {
-
         const { name, email, password } = req.body;
-
-        if (!name || !email || !password) {
-            return res.status(400).json({
-                message: "All fields are required."
-            });
-        }
-
-        if (password.length < 8) {
-            return res.status(400).json({
-                message: "Password must be at least 8 characters long."
-            });
-        }
-
-        if (!/[A-Za-z]/.test(password)) {
-            return res.status(400).json({
-                message: "Password must contain at least one letter."
-            });
-        }
-
-        if (!/[0-9]/.test(password)) {
-            return res.status(400).json({
-                message: "Password must contain at least one number."
-            });
-        }
 
         const passwordHash = await bcrypt.hash(password, 10);
 
@@ -39,9 +14,10 @@ async function registerUser(req, res) {
             email,
             passwordHash
         );
+
         return res.status(201).json({
             message: "User registered successfully.",
-            user:{
+            user: {
                 id: user.id,
                 name: user.name,
                 email: user.email
@@ -49,28 +25,14 @@ async function registerUser(req, res) {
         });
 
     } catch (err) {
-
-    if (err.code === "23505") {
-        return res.status(409).json({
-            message: "Email already registered."
-        });
+        next(err);
     }
-
-    return res.status(500).json({
-        message: "Internal server error"
-    });
-    } 
 }
 
-async function loginUser(req, res) {
+
+async function loginUser(req, res, next) {
     try {
         const { email, password } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({
-                message: "Email and password are required."
-            });
-        }
 
         const user = await userService.findUserByEmail(email);
 
@@ -91,14 +53,15 @@ async function loginUser(req, res) {
             });
         }
 
-        const token = jwt.sign({
-            userId: user.id,
-            role: user.role
-        },
-        process.env.JWT_SECRET,
-        {
-            expiresIn: "1h"
-        }
+        const token = jwt.sign(
+            {
+                userId: user.id,
+                role: user.role
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: "1h"
+            }
         );
 
         return res.status(200).json({
@@ -107,11 +70,10 @@ async function loginUser(req, res) {
         });
 
     } catch (err) {
-        return res.status(500).json({
-            message: err.message
-        });
+        next(err);
     }
 }
+
 
 function getProfile(req, res) {
     return res.status(200).json({
@@ -119,6 +81,7 @@ function getProfile(req, res) {
         user: req.user
     });
 }
+
 
 module.exports = {
     registerUser,

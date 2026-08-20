@@ -1,6 +1,11 @@
 function errorHandler(err, req, res, next) {
     console.error(err);
-
+    if (err.statusCode === 400 && err.details) {
+        return res.status(400).json({
+            message: err.message,
+            errors: err.details
+        });
+    }
     if (err.message === "Insufficient Balance") {
         return res.status(422).json({
             message: err.message

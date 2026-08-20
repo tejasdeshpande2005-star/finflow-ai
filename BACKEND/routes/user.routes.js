@@ -6,8 +6,14 @@ const authenticateToken = require("../middleware/auth.middleware");
 const authorizeRole = require("../middleware/role.middleware");
 const authLimiter = require("../middleware/rateLimit.middleware");
 
-router.post("/register",authLimiter, userController.registerUser);
-router.post("/login",authLimiter, userController.loginUser);
+const {
+    registerSchema,
+    loginSchema,
+    validate
+} = require("../middleware/validation.middleware");
+
+router.post("/register",validate(registerSchema), userController.registerUser);
+router.post("/login",validate(loginSchema), userController.loginUser);
 router.get(
     "/profile",
     authenticateToken,
