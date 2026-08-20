@@ -1,6 +1,6 @@
 const transactionService = require("../services/transaction.service");
 
-async function transferMoney(req, res) {
+async function transferMoney(req, res,next) {
     try {
         const { receiverAccountId, amount } = req.body;
 
@@ -49,42 +49,12 @@ async function transferMoney(req, res) {
         });
 
     } catch (err) {
-
-        // Insufficient balance
-        if (err.message === "Insufficient Balance") {
-            return res.status(422).json({
-                message: err.message
-            });
-        }
-
-        // Account not found
-        if (
-            err.message === "Sender account not found" ||
-            err.message === "Receiver account not found"
-        ) {
-            return res.status(404).json({
-                message: err.message
-            });
-        }
-
-        // Invalid transfer
-        if (
-            err.message === "Cannot transfer to the same account"
-        ) {
-            return res.status(400).json({
-                message: err.message
-            });
-        }
-
-        // Unexpected error
-        return res.status(500).json({
-            message: "Internal server error"
-        });
+        next(err);
     }
 }
 
 
-async function getUserTransactions(req, res) {
+async function getUserTransactions(req, res,next) {
     try {
         // Get user ID from JWT
         const userId = req.user.userId;
@@ -108,10 +78,7 @@ async function getUserTransactions(req, res) {
         });
 
     } catch (err) {
-
-        return res.status(500).json({
-            message: "Internal server error"
-        });
+        next(err);
     }
 }
 
