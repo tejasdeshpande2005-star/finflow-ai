@@ -1,3 +1,4 @@
 # Root ignores
 **/node_modules/
 **/.env
+.env.test
