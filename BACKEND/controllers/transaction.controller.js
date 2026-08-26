@@ -46,13 +46,8 @@ async function getUserTransactions(req, res,next) {
             });
         }
 
-        
-        const transactions =
-            await transactionService.getUserTransactions(account.id);
-
-        return res.status(200).json({
-            transactions
-        });
+        const result = await transactionService.getUserTransactions(account.id,req.query);
+        return res.status(200).json(result);
 
     } catch (err) {
         next(err);

@@ -10,23 +10,33 @@ async function transferMoney(senderAccountId, receiverAccountId, amount) {
     const client = await pool.connect();
     try{
         if (senderAccountId === receiverAccountId) {
-            throw new Error("Cannot transfer to the same account");
+            const error =  new Error("Cannot transfer to the same account");
+            error.statusCode = 400;
+            throw error;
         }
         if(amount <= 0){
-            throw new Error("Amount must be greater than zero.");
+            const error = new Error("Amount must be greater than zero.");
+            error.statusCode = 400;
+            throw error;
         }
         await client.query("BEGIN");
         const result = await client.query('SELECT balance FROM accounts WHERE id = $1 FOR UPDATE',[senderAccountId]);
         if(result.rows.length === 0){
-            throw new Error("Sender account not found");
+           const error = new Error("Sender account not found");
+           error.statusCode = 404;
+           throw error;
         }
         const balance = Number(result.rows[0].balance);
         if(balance<amount){
-            throw new Error("Insufficient Balance");
+            const error = new Error("Insufficient Balance");
+            error.statusCode = 422;
+            throw error;
         }
         const receiverResult = await client.query("SELECT id FROM accounts WHERE id = $1 FOR UPDATE",[receiverAccountId])
         if(receiverResult.rows.length === 0){
-            throw new Error("Receiver account not found");
+            const error = new Error("Receiver account not found");
+            error.statusCode = 404;
+            throw error;
         }
         await client.query("UPDATE accounts SET balance = balance - $1 WHERE id = $2",[amount,senderAccountId]);
         await client.query("UPDATE accounts SET balance = balance + $1 WHERE id = $2",[amount,receiverAccountId]);
@@ -45,18 +55,77 @@ async function transferMoney(senderAccountId, receiverAccountId, amount) {
     
 }
 
-async function getUserTransactions(accountId) {
-    const query = `
-        SELECT *
+async function getUserTransactions(accountId, options = {}) {
+    const {
+        page = 1,
+        limit = 10,
+        status,
+        transactionType
+    } = options;
+
+    const offset = (page - 1) * limit;
+
+    const values = [accountId];
+    const conditions = [
+        `(sender_account_id = $1 OR receiver_account_id = $1)`
+    ];
+
+    let parameterIndex = 2;
+
+    if (status) {
+        conditions.push(`status = $${parameterIndex}`);
+        values.push(status);
+        parameterIndex++;
+    }
+
+    if (transactionType) {
+        conditions.push(`transaction_type = $${parameterIndex}`);
+        values.push(transactionType);
+        parameterIndex++;
+    }
+
+    const countQuery = `
+        SELECT COUNT(*)
         FROM transactions
-        WHERE sender_account_id = $1
-           OR receiver_account_id = $1
-        ORDER BY created_at DESC;
+        WHERE ${conditions.join(" AND ")};
     `;
 
-    const result = await pool.query(query, [accountId]);
+    const countResult = await pool.query(
+        countQuery,
+        values
+    );
 
-    return result.rows;
+    const total = Number(countResult.rows[0].count);
+
+    const transactionQuery = `
+        SELECT *
+        FROM transactions
+        WHERE ${conditions.join(" AND ")}
+        ORDER BY created_at DESC
+        LIMIT $${parameterIndex}
+        OFFSET $${parameterIndex + 1};
+    `;
+
+    const transactionValues = [
+        ...values,
+        limit,
+        offset
+    ];
+
+    const result = await pool.query(
+        transactionQuery,
+        transactionValues
+    );
+
+    return {
+        transactions: result.rows,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    };
 }
 
 module.exports = {getAccountByUserId,

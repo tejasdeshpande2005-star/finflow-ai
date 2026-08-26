@@ -16,10 +16,17 @@ const loginSchema = z.object({
     password: z.string().min(8)
 });
 
-function validate(schema) {
+const transactionQuerySchema = z.object({
+    page: z.coerce.number().int().positive().default(1),
+    limit: z.coerce.number().int().positive().max(100).default(10),
+    status: z.enum(["PENDING", "COMPLETED", "FAILED"]).optional(),
+    transactionType: z.string().max(20).optional()
+});
+
+function validate(schema, source = "body") {
     return function (req, res, next) {
 
-        const result = schema.safeParse(req.body);
+        const result = schema.safeParse(req[source]);
 
         if (!result.success) {
             const error = new Error("Validation failed");
@@ -30,7 +37,7 @@ function validate(schema) {
             return next(error);
         }
 
-        req.body = result.data;
+        req[source] = result.data;
 
         next();
     };
@@ -40,5 +47,6 @@ module.exports = {
     transferSchema,
     registerSchema,
     loginSchema,
+    transactionQuerySchema,
     validate
 };

@@ -6,6 +6,7 @@ const authenticateToken = require("../middleware/auth.middleware");
 
 const {
     transferSchema,
+    transactionQuerySchema,
     validate
 } = require("../middleware/validation.middleware");
 
@@ -21,6 +22,7 @@ router.post(
 router.get(
     "/",
     authenticateToken,
+    validate(transactionQuerySchema,"query"),
     transactionController.getUserTransactions
 );
 
